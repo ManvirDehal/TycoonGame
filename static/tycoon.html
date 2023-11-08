@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tycoon Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <h1>Tycoon Game</h1>
+    <p>Current Resources: <span id="resourceCount">0</span></p>
+    <button id="createResources">Create Resources</button>
+    <button id="sellResources">Sell Resources</button>
+    <div id="store">
+        <h2>Store</h2>
+        <p>Your Money: <span id="moneyCount">0</span></p>
+        <button id="twoxCreateResources">2x Resources Per Click</button>
+        <button id="buyUpgrade2">Upgrade 2</button>
+        <!-- Add more upgrade options as needed -->
+    </div>
+    
+    <script>
+        // Function to update the money count on the page
+        const button = document.getElementById("createResources");
+
+        function updateTotals(resources, money) {
+            document.getElementById("resourceCount").textContent = resources;
+            document.getElementById("moneyCount").textContent = money;
+        }
+
+        function updateResources(resources) {
+            document.getElementById("resourceCount").textContent = resources;
+        }
+
+        function enableButtonAfterDelay(delay) {
+            button.disabled = true; // Disable the button
+            setTimeout(function () {
+                button.disabled = false; // Enable the button after the specified delay
+            }, delay);
+        }
+
+        // Event listener for the "Click to Earn" button
+        document.getElementById("createResources").addEventListener("click", function () {
+            // Simulate earning a dollar
+            makeResources();
+            // button.disabled = true;
+            // enableButtonAfterDelay(2000); //two second delay
+        });
+
+        document.getElementById("sellResources").addEventListener("click", function () {
+            // sell all resources
+            sellAllResources();
+        });
+
+        // Function to earn money and update the server
+        function makeResources() {
+            fetch("/makeResources", {
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateResources(data.resources);
+            })
+            .catch(error => {
+                console.log("Error earning money: " + error);
+            });
+        }
+
+        function sellAllResources() {
+            fetch("/sellResources",{
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateTotals(data.resources, data.money);
+            })
+            .catch(error => {
+                console.log("Error selling resources: " + error);
+            });
+        }
+
+        // When the page loads, retrieve the money value from local storage
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch("/getTotals")
+            .then(response => response.json())
+            .then(data => {
+                // Update the money count on the page
+                updateTotals(data.resources, data.money);
+            })
+            .catch(error => {
+                console.log("Error fetching money: " + error);
+            });
+        });
+
+        document.getElementById("twoxCreateResources").addEventListener("click", function () {
+            fetch("/2xCreateResources",{
+                method: "POST"
+            })
+            .then(response => {
+                if (response.status === 200) {
+                    // Upgrade was successful
+                    return response.json();
+                } else if (response.status === 400) {
+                    // User doesn't have enough money, handle the error
+                    return response.json().then(errorData => {
+                        window.alert("Error: " + errorData.error);
+                    });
+                } else {
+                    console.error("Unexpected error occurred");
+                }
+            })
+            .then(data => {
+                updateTotals(data.resources, data.money);
+            })
+            .catch(error => {
+                console.log("Error Buying Upgrade 2xCreateResource: " + error);
+            })
+
+        });
+    </script>
+</body>
+</html>
